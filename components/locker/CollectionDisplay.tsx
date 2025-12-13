@@ -99,7 +99,7 @@ export function CollectionDisplay() {
         <p className="text-muted-foreground mb-6 max-w-md mx-auto">
           Start building your collection by searching for fragrances or scanning a perfume bottle
         </p>
-        <Link href="/">
+        <Link href="/discover">
           <Button className="gap-2">
             <Package className="h-4 w-4" />
             Discover Fragrances

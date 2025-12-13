@@ -19,7 +19,7 @@ export default function LockerPage() {
             Your personal fragrance collection
           </p>
         </div>
-        <Link href="/">
+        <Link href="/discover">
           <Button className="gap-2">
             <Plus className="h-4 w-4" />
             Add Fragrance

@@ -56,7 +56,11 @@ export function getAllFragrances(): Fragrance[] {
 }
 
 // Search fragrances by name, brand, or notes
-export function searchFragrances(query: string, limit: number = 20): Fragrance[] {
+export async function searchFragrances(
+  query: string,
+  limit: number = 20,
+  filters?: import("../filters/types").FragranceFilters
+): Promise<Fragrance[]> {
   if (!query || query.trim().length === 0) {
     return []
   }
@@ -69,42 +73,66 @@ export function searchFragrances(query: string, limit: number = 20): Fragrance[]
 
   const searchTerm = query.toLowerCase().trim()
   const results: Fragrance[] = []
+  const searchTermWords = searchTerm.split(/\s+/).filter(w => w.length > 0)
 
-  for (const fragrance of fragranceDataset) {
+  // Early exit for very short queries
+  if (searchTerm.length < 2) {
+    return []
+  }
+
+  // Limit dataset size for performance (process max 5000 items)
+  const datasetToSearch = fragranceDataset.slice(0, 5000)
+  
+  for (const fragrance of datasetToSearch) {
     let score = 0
 
     // Get name (handle both converted and raw formats)
     const name = fragrance.name || (fragrance as any).Perfume || ""
+    const nameLower = name.toLowerCase()
     
     // Get brand (handle both converted and raw formats)
     const brand = fragrance.brand || (fragrance as any).Brand || ""
+    const brandLower = brand.toLowerCase()
 
-    // Exact name match (highest priority)
-    if (name.toLowerCase().includes(searchTerm)) {
+    // Exact name match (highest priority) - check first for early exit
+    if (nameLower.includes(searchTerm)) {
       score += 100
+      // For exact matches, add immediately and continue
+      results.push({ ...fragrance, _searchScore: score })
+      if (results.length >= limit * 3) break // Early exit if we have enough high-score results
+      continue
     }
 
     // Brand match
-    if (brand.toLowerCase().includes(searchTerm)) {
+    if (brandLower.includes(searchTerm)) {
       score += 50
     }
 
-    // Notes match
-    const allNotes = [
-      ...(fragrance.top || []),
-      ...(fragrance.middle || []),
-      ...(fragrance.base || []),
-    ]
-    const noteMatches = allNotes.filter((note) =>
-      note.toLowerCase().includes(searchTerm)
-    ).length
-    if (noteMatches > 0) {
-      score += noteMatches * 10
+    // Notes match - only check if we haven't found a high score match
+    if (score < 100) {
+      const allNotes = [
+        ...(fragrance.top || []),
+        ...(fragrance.middle || []),
+        ...(fragrance.base || []),
+      ]
+      
+      // Optimize: check if search term appears in any note
+      let noteMatches = 0
+      for (const note of allNotes) {
+        if (note.toLowerCase().includes(searchTerm)) {
+          noteMatches++
+        }
+      }
+      if (noteMatches > 0) {
+        score += noteMatches * 10
+      }
     }
 
-    // Description match
-    if (fragrance.description?.toLowerCase().includes(searchTerm)) {
-      score += 5
+    // Description match - only if we have a description
+    if (fragrance.description && score < 50) {
+      if (fragrance.description.toLowerCase().includes(searchTerm)) {
+        score += 5
+      }
     }
 
     if (score > 0) {
@@ -112,11 +140,58 @@ export function searchFragrances(query: string, limit: number = 20): Fragrance[]
     }
   }
 
-  // Sort by score and limit results
-  return results
+  // Sort by score (only top candidates)
+  const sortedResults = results
     .sort((a, b) => (b._searchScore || 0) - (a._searchScore || 0))
-    .slice(0, limit)
+    .slice(0, limit * 2) // Only keep top candidates before filtering
     .map(({ _searchScore, ...fragrance }) => fragrance)
+
+  // Apply filters if provided (on smaller set)
+  let filteredResults = sortedResults
+  if (filters) {
+    const { applyFilters } = await import("../filters/apply-filters")
+    filteredResults = applyFilters(sortedResults, filters)
+  }
+
+  return filteredResults.slice(0, limit)
+}
+
+// Search fragrances by vibe (returns results with vibe match info)
+export async function searchFragrancesByVibe(
+  query: string,
+  limit: number = 5,
+  filters?: import("../filters/types").FragranceFilters
+): Promise<Array<Fragrance & { _vibeExplanation?: string; _vibeSimilarity?: number }>> {
+  if (!query || query.trim().length === 0) {
+    return []
+  }
+
+  // Ensure dataset is loaded
+  if (fragranceDataset.length === 0) {
+    console.warn("Dataset not loaded yet. Call loadDataset() first.")
+    return []
+  }
+
+  // Apply filters first if provided (on smaller subset for performance)
+  let datasetToSearch = fragranceDataset
+  if (filters) {
+    const { applyFilters } = await import("../filters/apply-filters")
+    // Limit dataset size for performance - filter on first 2000 items
+    const limitedDataset = fragranceDataset.slice(0, 2000)
+    datasetToSearch = applyFilters(limitedDataset, filters)
+  } else {
+    // Even without filters, limit dataset size for vibe search performance
+    datasetToSearch = fragranceDataset.slice(0, 2000)
+  }
+
+  const { searchByVibe } = await import("../vibes/vibe-engine")
+  const matches = searchByVibe(datasetToSearch, query, limit)
+
+  return matches.map((match) => ({
+    ...match.fragrance,
+    _vibeExplanation: match.explanation,
+    _vibeSimilarity: match.similarity,
+  }))
 }
 
 // Get fragrance by exact name and brand

@@ -10,9 +10,16 @@ import { useLocker } from "@/lib/hooks/useLocker"
 interface FragranceResultsProps {
   results: Fragrance[]
   query: string
+  isVibeSearch?: boolean
 }
 
-function FragranceCard({ fragrance, index }: { fragrance: Fragrance; index: number }) {
+interface FragranceCardProps {
+  fragrance: Fragrance & { _vibeExplanation?: string; _vibeSimilarity?: number }
+  index: number
+  showVibeInfo?: boolean
+}
+
+function FragranceCard({ fragrance, index, showVibeInfo }: FragranceCardProps) {
   const [imageError, setImageError] = useState(false)
   const { addToLocker, isInLocker } = useLocker()
   const [justAdded, setJustAdded] = useState(false)
@@ -55,6 +62,18 @@ function FragranceCard({ fragrance, index }: { fragrance: Fragrance; index: numb
         <CardTitle className="text-lg">{fragrance.name}</CardTitle>
         {fragrance.brand && (
           <CardDescription>{fragrance.brand}</CardDescription>
+        )}
+        {showVibeInfo && (fragrance as any)._vibeExplanation && (
+          <div className="mt-2 px-3 py-1.5 rounded-md bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 border border-purple-200 dark:border-purple-800">
+            <p className="text-xs font-medium text-purple-700 dark:text-purple-300">
+              {(fragrance as any)._vibeExplanation}
+            </p>
+            {(fragrance as any)._vibeSimilarity && (
+              <p className="text-xs text-purple-600 dark:text-purple-400 mt-0.5">
+                {Math.round((fragrance as any)._vibeSimilarity * 100)}% match
+              </p>
+            )}
+          </div>
         )}
       </CardHeader>
       <CardContent className="space-y-3">
@@ -161,7 +180,7 @@ function FragranceCard({ fragrance, index }: { fragrance: Fragrance; index: numb
   )
 }
 
-export function FragranceResults({ results, query }: FragranceResultsProps) {
+export function FragranceResults({ results, query, isVibeSearch = false }: FragranceResultsProps) {
   if (results.length === 0 && query.trim().length >= 2) {
     return (
       <div className="rounded-lg border-2 border-dashed border-muted-foreground/20 p-12 text-center">
@@ -170,7 +189,9 @@ export function FragranceResults({ results, query }: FragranceResultsProps) {
           No fragrances found for &quot;{query}&quot;
         </p>
         <p className="text-sm text-muted-foreground mt-2">
-          Try a different search term
+          {isVibeSearch 
+            ? "Try different vibe descriptors like 'fresh', 'woody', 'sweet', or 'dark'"
+            : "Try a different search term"}
         </p>
       </div>
     )
@@ -183,14 +204,29 @@ export function FragranceResults({ results, query }: FragranceResultsProps) {
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-lg font-semibold">
-          Found {results.length} result{results.length !== 1 ? "s" : ""} for &quot;{query}&quot;
-        </h3>
+        <div className="flex items-center gap-2 mb-1">
+          <h3 className="text-lg font-semibold">
+            {isVibeSearch ? "Vibe matches" : "Found"} {results.length} result{results.length !== 1 ? "s" : ""}
+          </h3>
+          {isVibeSearch && (
+            <span className="px-2 py-0.5 text-xs rounded-full bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300">
+              Vibe Search
+            </span>
+          )}
+        </div>
+        <p className="text-sm text-muted-foreground">
+          for &quot;{query}&quot;
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {results.map((fragrance, index) => (
-          <FragranceCard key={fragrance.id || index} fragrance={fragrance} index={index} />
+          <FragranceCard 
+            key={fragrance.id || index} 
+            fragrance={fragrance as Fragrance & { _vibeExplanation?: string; _vibeSimilarity?: number }} 
+            index={index}
+            showVibeInfo={isVibeSearch}
+          />
         ))}
       </div>
     </div>
