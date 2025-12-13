@@ -4,7 +4,7 @@ import { useState } from "react"
 import { type Fragrance } from "@/lib/data/types"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Package, Plus, Check } from "lucide-react"
+import { Package, Plus, Check, Star } from "lucide-react"
 import { useLocker } from "@/lib/hooks/useLocker"
 
 interface FragranceResultsProps {
@@ -27,21 +27,30 @@ function FragranceCard({ fragrance, index }: { fragrance: Fragrance; index: numb
   }
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      {fragrance.image && !imageError ? (
-        <div className="relative w-full h-48 bg-muted rounded-t-lg overflow-hidden">
-          <img
-            src={fragrance.image}
-            alt={fragrance.name}
-            className="w-full h-full object-contain p-4"
-            onError={() => setImageError(true)}
-          />
-        </div>
-      ) : (
-        <div className="w-full h-48 bg-muted rounded-t-lg flex items-center justify-center">
-          <Package className="h-12 w-12 text-muted-foreground" />
-        </div>
-      )}
+    <Card className="group hover:shadow-xl transition-all duration-300 border-2 hover:border-primary/20 animate-fade-in overflow-hidden">
+      <div className="relative overflow-hidden">
+        {fragrance.image && !imageError ? (
+          <div className="relative w-full h-48 bg-gradient-to-br from-muted to-muted/50 overflow-hidden">
+            <img
+              src={fragrance.image}
+              alt={fragrance.name}
+              className="w-full h-full object-contain p-4 transition-transform duration-300 group-hover:scale-105"
+              onError={() => setImageError(true)}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          </div>
+        ) : (
+          <div className="w-full h-48 bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
+            <Package className="h-12 w-12 text-muted-foreground/50" />
+          </div>
+        )}
+        {fragrance.rating && (
+          <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full bg-background/90 backdrop-blur-sm border">
+            <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+            <span className="text-xs font-semibold">{fragrance.rating}</span>
+          </div>
+        )}
+      </div>
       <CardHeader>
         <CardTitle className="text-lg">{fragrance.name}</CardTitle>
         {fragrance.brand && (

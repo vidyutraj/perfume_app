@@ -67,9 +67,14 @@ export function VisualSearch() {
 
   return (
     <div className="space-y-4">
-      <Card>
+      <Card className="border-2">
         <CardHeader>
-          <CardTitle>Visual Search</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <div className="p-1.5 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600">
+              <Camera className="h-4 w-4 text-white" />
+            </div>
+            Visual Search
+          </CardTitle>
           <CardDescription>
             Take a photo of a perfume bottle to automatically identify and add it to your locker
           </CardDescription>
@@ -111,15 +116,15 @@ export function VisualSearch() {
           )}
 
           {matchedFragrance && (
-            <Card className="border-green-500">
+            <Card className="border-2 border-green-500/50 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20">
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
                   <CardTitle>Match Found!</CardTitle>
                 </div>
                 {similarity && (
                   <CardDescription>
-                    Confidence: {(similarity * 100).toFixed(1)}%
+                    Confidence: <span className="font-semibold text-green-600 dark:text-green-400">{(similarity * 100).toFixed(1)}%</span>
                   </CardDescription>
                 )}
               </CardHeader>
@@ -141,12 +146,12 @@ export function VisualSearch() {
                 </div>
                 
                 {isInLocker(matchedFragrance) ? (
-                  <div className="flex items-center gap-2 text-green-600">
-                    <CheckCircle className="h-4 w-4" />
-                    <span className="text-sm">Already in your locker</span>
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-800">
+                    <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    <span className="text-sm font-medium text-green-700 dark:text-green-300">Already in your locker</span>
                   </div>
                 ) : (
-                  <Button onClick={handleAddToLocker} className="w-full">
+                  <Button onClick={handleAddToLocker} className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
                     <CheckCircle className="mr-2 h-4 w-4" />
                     Add to Locker
                   </Button>

@@ -3,6 +3,7 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { Navbar } from "@/components/layout/Navbar"
 import { Sidebar } from "@/components/layout/Sidebar"
+import { LockerProvider } from "@/lib/contexts/LockerContext"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -19,13 +20,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <Navbar />
-        <div className="flex min-h-screen">
-          <Sidebar />
-          <main className="flex-1 px-6 py-8 max-w-6xl mx-auto w-full">
-            {children}
-          </main>
-        </div>
+        <LockerProvider>
+          <Navbar />
+          <div className="flex min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+            <Sidebar />
+            <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8 max-w-7xl mx-auto w-full">
+              {children}
+            </main>
+          </div>
+        </LockerProvider>
       </body>
     </html>
   )
